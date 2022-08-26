@@ -49,8 +49,11 @@ prometheus-config-file-{{ name }}-file-managed:
       - file: prometheus-config-file-etc-file-directory
       - user: prometheus-config-users-install-{{ name }}-user-present
       - group: prometheus-config-users-install-{{ name }}-group-present
+    {%- if 'service' in p.pkg.component[name] and p.pkg.component[name]['service'] %}
     - watch_in:
       - service: prometheus-service-running-{{ name }}
+      - restart: true
+    {%- endif %}
 
         {%- endif %}
     {%- endfor %}
@@ -62,7 +65,11 @@ prometheus-config-file-{{ name }}-file-managed:
 
 prometheus-config-file-{{ ef }}-file-managed:
   file.managed:
+    {%- if grains.os != 'Windows' and name.startswith("/") %}
+    - name: {{ name }}
+    {%- else %}
     - name: {{ p.dir.etc }}{{ p.div }}{{ name }}.yml
+    {%- endif %}
     - source: {{ files_switch(['config.yml.jinja'],
                               lookup='prometheus-config-file-' ~ ef ~ '-file-managed'
                  )
